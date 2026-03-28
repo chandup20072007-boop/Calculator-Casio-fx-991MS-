@@ -1,0 +1,219 @@
+import tkinter as tk
+import math
+from fractions import Fraction
+
+root = tk.Tk()
+root.title("My Casio Calculator")
+root.geometry("360x650")
+root.configure(bg="black")
+
+expression = ""
+shift = False
+fraction_mode = False
+memory = 0
+
+# Display
+display = tk.Entry(root, font=("Arial", 18), bd=8, relief=tk.RIDGE, justify="right")
+display.pack(fill="x", padx=10, pady=10, ipady=10)
+
+def update():
+    display.delete(0, tk.END)
+    display.insert(tk.END, expression)
+
+def press(key):
+    global expression
+    expression += str(key)
+    update()
+
+def clear():
+    global expression
+    expression = ""
+    update()
+
+# --- CALCULATE ---
+def calculate():
+    global expression
+    try:
+        expr = expression.replace("^", "**")
+
+        result = eval(expr, {"__builtins__": None}, {
+            "sin": lambda x: math.sin(math.radians(x)),
+            "cos": lambda x: math.cos(math.radians(x)),
+            "tan": lambda x: math.tan(math.radians(x)),
+            "log": math.log10,
+            "ln": math.log,
+            "sqrt": math.sqrt,
+            "pi": math.pi,
+            "e": math.e
+        })
+
+        if fraction_mode:
+            frac = Fraction(result).limit_denominator()
+            expression = f"{frac.numerator}/{frac.denominator}"
+        else:
+            expression = str(result)
+
+        update()
+    except:
+        expression = "Error"
+        update()
+
+# --- SHIFT ---
+def toggle_shift():
+    global shift
+    shift = not shift
+    shift_btn.config(bg="orange" if shift else "#555")
+
+# --- FRACTION ---
+def toggle_fraction():
+    global fraction_mode
+    fraction_mode = not fraction_mode
+    frac_btn.config(bg="orange" if fraction_mode else "#555")
+
+# --- MEMORY ---
+def mem_add():
+    global memory
+    try:
+        memory += float(eval(expression))
+    except:
+        pass
+
+def mem_sub():
+    global memory
+    try:
+        memory -= float(eval(expression))
+    except:
+        pass
+
+def mem_recall():
+    global expression
+    expression = str(memory)
+    update()
+
+def mem_clear():
+    global memory
+    memory = 0
+
+# --- EQUATION SOLVER ---
+def solve_quadratic():
+    global expression
+    try:
+        a = float(input("Enter a: "))
+        b = float(input("Enter b: "))
+        c = float(input("Enter c: "))
+
+        d = b*b - 4*a*c
+
+        if d >= 0:
+            x1 = (-b + math.sqrt(d)) / (2*a)
+            x2 = (-b - math.sqrt(d)) / (2*a)
+            expression = f"x1={x1}, x2={x2}"
+        else:
+            expression = "No real roots"
+
+        update()
+    except:
+        expression = "Error"
+        update()
+
+# --- NORMAL BUTTONS ---
+buttons = [
+    ['7','8','9','/'],
+    ['4','5','6','*'],
+    ['1','2','3','-'],
+    ['0','.','=','+']
+]
+
+for row in buttons:
+    frame = tk.Frame(root, bg="black")
+    frame.pack(pady=2)
+
+    for btn in row:
+        action = calculate if btn == "=" else lambda x=btn: press(x)
+
+        tk.Button(frame, text=btn, width=5, height=2,
+                  font=("Arial", 12),
+                  command=action,
+                  bg="#333", fg="white").pack(side="left", padx=2)
+
+# --- CONTROL ROW ---
+ctrl = tk.Frame(root, bg="black")
+ctrl.pack(pady=2)
+
+shift_btn = tk.Button(ctrl, text="SHIFT", width=5, height=2,
+                      command=toggle_shift, bg="#555", fg="white")
+shift_btn.pack(side="left", padx=2)
+
+frac_btn = tk.Button(ctrl, text="a/b", width=5, height=2,
+                     command=toggle_fraction, bg="#555", fg="white")
+frac_btn.pack(side="left", padx=2)
+
+tk.Button(ctrl, text="(", width=5, height=2,
+          command=lambda: press("("), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(ctrl, text=")", width=5, height=2,
+          command=lambda: press(")"), bg="#555", fg="white").pack(side="left", padx=2)
+
+# --- SCI ROW ---
+sci = tk.Frame(root, bg="black")
+sci.pack(pady=2)
+
+tk.Button(sci, text="sin", width=5, height=2,
+          command=lambda: press("sin("), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(sci, text="cos", width=5, height=2,
+          command=lambda: press("cos("), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(sci, text="tan", width=5, height=2,
+          command=lambda: press("tan("), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(sci, text="√", width=5, height=2,
+          command=lambda: press("sqrt("), bg="#555", fg="white").pack(side="left", padx=2)
+
+# --- MORE SCI ---
+sci2 = tk.Frame(root, bg="black")
+sci2.pack(pady=2)
+
+tk.Button(sci2, text="log", width=5, height=2,
+          command=lambda: press("log("), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(sci2, text="ln", width=5, height=2,
+          command=lambda: press("ln("), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(sci2, text="x²", width=5, height=2,
+          command=lambda: press("**2"), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(sci2, text="xʸ", width=5, height=2,
+          command=lambda: press("^"), bg="#555", fg="white").pack(side="left", padx=2)
+
+# --- CONSTANTS ---
+const = tk.Frame(root, bg="black")
+const.pack(pady=2)
+
+tk.Button(const, text="π", width=5, height=2,
+          command=lambda: press("pi"), bg="#555", fg="white").pack(side="left", padx=2)
+
+tk.Button(const, text="e", width=5, height=2,
+          command=lambda: press("e"), bg="#555", fg="white").pack(side="left", padx=2)
+
+# --- MEMORY ---
+mem = tk.Frame(root, bg="black")
+mem.pack(pady=2)
+
+tk.Button(mem, text="M+", width=5, height=2, command=mem_add).pack(side="left", padx=2)
+tk.Button(mem, text="M-", width=5, height=2, command=mem_sub).pack(side="left", padx=2)
+tk.Button(mem, text="MR", width=5, height=2, command=mem_recall).pack(side="left", padx=2)
+tk.Button(mem, text="MC", width=5, height=2, command=mem_clear).pack(side="left", padx=2)
+
+# --- SOLVER ---
+tk.Button(root, text="Solve ax²+bx+c", height=2,
+          command=solve_quadratic, bg="purple", fg="white").pack(pady=5)
+
+# --- CLEAR ---
+tk.Button(root, text="AC",
+          width=32, height=2,
+          font=("Arial", 12),
+          command=clear,
+          bg="red", fg="white").pack(pady=5)
+
+root.mainloop()
